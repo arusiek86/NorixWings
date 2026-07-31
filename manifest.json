@@ -1,6 +1,7 @@
 {
   "name": "Władca Krainy: Cywilizacja",
   "short_name": "Cywilizacja",
+  "description": "Gra strategiczna o budowaniu własnej cywilizacji.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1e3c72",
