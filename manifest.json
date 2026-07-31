@@ -16,7 +16,7 @@
     {
       "src": "./launcher-icon.jpg",
       "sizes": "192x192",
-      "type": "image/jpeg",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]
