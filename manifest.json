@@ -8,9 +8,9 @@
   "theme_color": "#2a5298",
   "icons": [
     {
-      "src": "./icon.png",
+      "src": "./launcher-icon.jpg",
       "sizes": "512x512",
-      "type": "image/jpeg"
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]
