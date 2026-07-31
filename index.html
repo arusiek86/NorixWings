@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Władca Krainy: Ratuj Cywilizację!</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            text-align: center; 
+            background: linear-gradient(135deg, #1e3c72, #2a5298); 
+            color: #fff; 
+            margin: 0; 
+            padding: 10px; 
+            user-select: none;
+        }
+        h2 { margin: 5px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); font-size: 20px; }
+        
+        #game-container { 
+            position: relative; 
+            width: 700px; 
+            height: 400px; 
+            background: radial-gradient(circle, #52b788 0%, #2d6a4f 100%);
+            margin: 10px auto; 
+            border: 6px solid #f4a261; 
+            overflow: hidden; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            touch-action: none; 
+        }
+
+        .decoration {
+            position: absolute;
+            font-size: 28px;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+
+        .entity { 
+            position: absolute; 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 24px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        #player { background: #4ea8de; border: 3px solid #fff; z-index: 10; }
+        .bot { background: #e76f51; border: 3px solid #fff; }
+        .building { 
+            background: #e9c46a; 
+            border: 3px solid #fff; 
+            border-radius: 10px; 
+            width: 60px; 
+            height: 60px; 
+            font-size: 30px;
+        }
+
+        .panel-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .panel { 
+            background: rgba(0, 0, 0, 0.4); 
+            backdrop-filter: blur(5px);
+            padding: 10px 15px; 
+            border-radius: 12px; 
+            width: 280px; 
+            text-align: left; 
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        button { 
+            background: #2a9d8f; 
+            color: white; 
+            border: none; 
+            padding: 8px 12px; 
+            margin: 4px 0; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            width: 100%; 
+            font-weight: bold; 
+            font-size: 13px;
+            transition: background 0.2s, transform 0.1s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        }
+        button:hover { background: #21867a; transform: translateY(-2px); }
+        button.war-btn { background: #e76f51; }
+        button.war-btn:hover { background: #d65a3b; }
+
+        #mobile-controls {
+            display: none;
+            margin-top: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 10px;
+            width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .m-btn {
+            background: #457b9d;
+            color: white;
+            border: 2px solid #fff;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 3px;
+        }
+        .m-btn:active { background: #1d3557; }
+
+        #log { 
+            margin-top: 10px; 
+            height: 65px; 
+            overflow-y: auto; 
+            background: rgba(0, 0, 0, 0.6); 
+            padding: 8px; 
+            width: 680px; 
+            display: inline-block; 
+            text-align: left; 
+            border-radius: 8px; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 12px; 
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+    </style>
+</head>
+<link rel="manifest" href="manifest.json">
+<body>
+
+    <h2>🏰 Władca Krainy: Obrona Cywilizacji</h2>
+    <p style="font-size: 13px; margin: 5px 0;">
+        <b>Laptop/PC:</b> Strzałki/WSAD (ruch) | <b>T:</b> Atakuj | <b>F5:</b> Zbierz surowce | <b>Y:</b> Kup cywilizację (50$) | <b>P:</b> Przyciski mobilne
+    </p>
+
+    <div id="game-container" onpointerdown="rozpocznijRuch(event)" onpointerup="zatrzymajRuch()" onpointerleave="zatrzymajRuch()">
+        <div class="decoration" style="left: 50px; top: 40px;">🌲</div>
+        <div class="decoration" style="left: 600px; top: 320px;">🌲</div>
+        <div class="decoration" style="left: 350px; top: 20px;">⛰️</div>
+        
+        <div id="building" class="entity building" style="left: 320px; top: 160px;" title="Cywilizacja">🏛️</div>
+        <div id="bot" class="entity bot" style="left: 520px; top: 280px;" title="Wróg">👺</div>
+        <div id="player" class="entity" style="left: 100px; top: 200px;" title="Twoja Postać">🧙‍♂️</div>
+    </div>
+
+    <div id="mobile-controls">
+        <div style="font-size: 12px; margin-bottom: 5px; color: #ffd166;"><b>Panel Mobilny (dotknij mapy aby iść)</b></div>
+        <div>
+            <button class="m-btn" onclick="zbierzSurowce()">F5: Zbierz</button>
+            <button class="m-btn" style="background:#e76f51;" onclick="atakujBota()">T: Atak</button>
+            <button class="m-btn" style="background:#2a9d8f;" onclick="kupCywilizacje()">Y: Kup (50$)</button>
+        </div>
+    </div>
+
+    <div class="panel-container">
+        <div class="panel">
+            <b>✨ Status Królestwa:</b><br>
+            Monety: <span id="gold" style="color: #ffd166; font-weight: bold;">0</span> $<br>
+            Dochód: <span id="income" style="color: #06d6a0; font-weight: bold;">1</span> / sek<br>
+            Cywilizacja HP: <span id="civHp" style="color: #e76f51; font-weight: bold;">1000</span> / 1000
+        </div>
+        <div class="panel">
+            <b>⚔️ Panel Akcji:</b>
+            <button onclick="zbierzSurowce()">Zbierz surowce (F5)</button>
+            <button class="war-btn" onclick="atakujBota()">Atakuj Wroga (T)</button>
+            <button style="background: #264653;" onclick="kupCywilizacje()">Kup Cywilizację 50$ (Y)</button>
+        </div>
+    </div>
+
+    <div id="log">Alarm! Wróg zmierza w stronę Twojej cywilizacji. Ratuj ją!<br></div>
+
+<script>
+    let gold = 0;
+    let income = 1;
+    let civHp = 1000;
+    
+    let playerX = 100, playerY = 200;
+    let buildingX = 320, buildingY = 160; // Cywilizacja na środku
+    let botX = 520, botY = 280;
+
+    let klawisze = {};
+    let docelowyX = null;
+    let docelowyY = null;
+
+    window.addEventListener('keydown', (e) => { 
+        klawisze[e.key] = true; 
+        if (e.key === 'F5') { e.preventDefault(); zbierzSurowce(); }
+        if (e.key === 't' || e.key === 'T') { atakujBota(); }
+        if (e.key === 'y' || e.key === 'Y') { kupCywilizacje(); }
+        if (e.key === 'p' || e.key === 'P') { przelaczPanelMobilny(); }
+    });
+    window.addEventListener('keyup', (e) => { klawisze[e.key] = false; });
+
+    function rozpocznijRuch(e) {
+        const kontener = document.getElementById('game-container').getBoundingClientRect();
+        docelowyX = e.clientX - kontener.left - 25;
+        docelowyY = e.clientY - kontener.top - 25;
+    }
+
+    function zatrzymajRuch() {
+        docelowyX = null;
+        docelowyY = null;
+    }
+
+    function przelaczPanelMobilny() {
+        let mCtrl = document.getElementById('mobile-controls');
+        mCtrl.style.display = mCtrl.style.display === 'block' ? 'none' : 'block';
+    }
+
+    // Główna pętla gry (ruch gracza, ruch bota w stronę cywilizacji, atak na cywilizację)
+    setInterval(() => {
+        if (civHp <= 0) return; // Koniec gry jeśli cywilizacja zniszczona
+
+        let predkosc = 4;
+
+        // Sterowanie gracza klawiaturą
+        if (klawisze['ArrowUp'] || klawisze['w'] || klawisze['W']) playerY -= predkosc;
+        if (klawisze['ArrowDown'] || klawisze['s'] || klawisze['S']) playerY += predkosc;
+        if (klawisze['ArrowLeft'] || klawisze['a'] || klawisze['A']) playerX -= predkosc;
+        if (klawisze['ArrowRight'] || klawisze['d'] || klawisze['D']) playerX += predkosc;
+
+        // Sterowanie dotykiem / myszką
+        if (docelowyX !== null && docelowyY !== null) {
+            let dx = docelowyX - playerX;
+            let dy = docelowyY - playerY;
+            let dystansDoCelu = Math.sqrt(dx * dx + dy * dy);
+
+            if (dystansDoCelu > predkosc) {
+                playerX += (dx / dystansDoCelu) * predkosc;
+                playerY += (dy / dystansDoCelu) * predkosc;
+            } else {
+                playerX = docelowyX;
+                playerY = docelowyY;
+                docelowyX = null;
+                docelowyY = null;
+            }
+        }
+
+        // Ograniczenie ruchu gracza do planszy
+        playerX = Math.max(0, Math.min(650, playerX));
+        playerY = Math.max(0, Math.min(350, playerY));
+
+        // RUCH BOTA: Bot szuka i idzie w stronę cywilizacji
+        let bdx = buildingX - botX;
+        let bdy = buildingY - botY;
+        let bDystans = Math.sqrt(bdx * bdx + bdy * bdy);
+        let botPredkosc = 1.5; // Bot porusza się wolniej, żeby dało się zareagować
+
+        if (bDystans > 40) {
+            botX += (bdx / bDystans) * botPredkosc;
+            botY += (bdy / bDystans) * botPredkosc;
+        } else {
+            // Bot doszedł do cywilizacji i ją atakuje!
+            civHp -= 1; // Zabiera HP cywilizacji
+            if (civHp < 0) civHp = 0;
+            document.getElementById('civHp').innerText = civHp;
+            if (civHp === 0) {
+                dodajDoLogu("💀 KONIEC GRY! Cywilizacja została zniszczona przez wroga!");
+            }
+        }
+
+        aktualizujPozycje();
+
+        // Dochód
+        gold += income / 10;
+        document.getElementById('gold').innerText = Math.floor(gold);
+    }, 50);
+
+    function aktualizujPozycje() {
+        document.getElementById('player').style.left = playerX + 'px';
+        document.getElementById('player').style.top = playerY + 'px';
+        document.getElementById('bot').style.left = botX + 'px';
+        document.getElementById('bot').style.top = botY + 'px';
+    }
+
+    function odleglosc(x1, y1, x2, y2) {
+        return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+    }
+
+    function zbierzSurowce() {
+        let dystans = odleglosc(playerX, playerY, buildingX, buildingY);
+        if (dystans < 70) {
+            income += 2;
+            dodajDoLogu("🌲 Zebrano podatki z cywilizacji (F5)! Dochód wzrósł.");
+        } else {
+            dodajDoLogu("⚠️ Musisz podejść do budynku cywilizacji (🏛️), aby zebrać zasoby (F5)!");
+        }
+    }
+
+    function atakujBota() {
+        let dystans = odleglosc(playerX, playerY, botX, botY);
+        if (dystans < 70) {
+            gold += 40;
+            dodajDoLogu("⚔️ Uratowano cywilizację przed tym botem! Zyskujesz złoto.");
+            // Reset bota daleko od cywilizacji
+            botX = Math.random() > 0.5 ? 0 : 650;
+            botY = Math.random() * 350;
+        } else {
+            dodajDoLogu("⚠️ Podejdź bliżej wroga, aby go zaatakować i odciągnąć od cywilizacji (T)!");
+        }
+    }
+
+    function kupCywilizacje() {
+        if (gold >= 50) {
+            gold -= 50;
+            civHp = Math.min(1000, civHp + 200); // Odnawia HP cywilizacji
+            income += 5;
+            dodajDoLogu("👑 Rozbudowano cywilizację (Y)! Odzyskano 200 HP i zwiększono dochód.");
+            document.getElementById('civHp').innerText = civHp;
+            document.getElementById('gold').innerText = Math.floor(gold);
+            document.getElementById('income').innerText = income;
+        } else {
+            dodajDoLogu("❌ Za mało monet! Potrzebujesz 50 $ na rozwój (klawisz Y).");
+        }
+    }
+
+    function dodajDoLogu(wiadomosc) {
+        let logDiv = document.getElementById('log');
+        logDiv.innerHTML += wiadomosc + "<br>";
+        logDiv.scrollTop = logDiv.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
