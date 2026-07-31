@@ -1,0 +1,12 @@
+{
+  "background_color": "#ffffff",
+  "description": "fajna polska gra przez gemini",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "NorixWings",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "NorixWings",
+  "start_url": "/",
+  "theme_color": "#ffffff"
+}
